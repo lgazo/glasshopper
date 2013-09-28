@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -85,9 +86,32 @@ public class MainServlet extends HttpServlet {
       + "</article>";
 
   private static final String LIST_HTML = "<article><section><ul class=\"text-x-small\"><li>Gingerbread</li><li>Chocolate Chip Cookies</li><li>Tiramisu</li><li>Donuts</li>      <li>Sugar Plum Gummies</li>    </ul>  </section>  <footer>    <p>Grocery list</p>  </footer></article>";
-  
-  
-  /**
+
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String userId = AuthUtil.getUserId(req);
+        Credential credential = AuthUtil.newAuthorizationCodeFlow().loadCredential(userId);
+        TimelineItem timelineItem = new TimelineItem();
+        timelineItem.setHtml(LIST_HTML);
+
+        timelineItem.setNotification(new NotificationConfig().setLevel("DEFAULT"));
+        MirrorClient.insertTimelineItem(credential, timelineItem);
+
+        List<MenuItem> menuItemList = new ArrayList<MenuItem>();
+        List<MenuValue> menuValues = new ArrayList<MenuValue>();
+        menuValues.add(new MenuValue().setIconUrl(WebUtil.buildUrl(req, "/static/images/drill.png"))
+                .setDisplayName("Check"));
+        menuItemList.add(new MenuItem().setValues(menuValues).setId("check").setAction("CUSTOM"));
+
+        timelineItem.setMenuItems(menuItemList);
+
+        // Triggers an audible tone when the timeline item is received
+        timelineItem.setNotification(new NotificationConfig().setLevel("DEFAULT"));
+
+    }
+
+    /**
    * Do stuff when buttons on index.jsp are clicked
    */
   @Override
